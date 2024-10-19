@@ -6,6 +6,9 @@ import {
   View,
   Image,
   StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import {CategoryScroll} from '../../components/molecules';
 import {Gap, Header} from '../../components/atoms';
@@ -14,6 +17,7 @@ import {
   fetchCategories,
   fetchProductsByCategory,
 } from '../../services/Category';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,6 +27,8 @@ const Home: React.FC = () => {
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   useEffect(() => {
     loadCategories();
@@ -66,25 +72,58 @@ const Home: React.FC = () => {
 
   const renderProductItem = useCallback(
     ({item}: {item: Product}) => (
-      <View style={styles.productCard}>
-        <Image
-          source={{uri: item.thumbnail}}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
-        <Text style={styles.productTitle}>{item.title}</Text>
-        <Text style={styles.productDescription}>{item.description}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-      </View>
+      <TouchableOpacity onPress={() => showProductDetails(item)}>
+        <View style={styles.productCard}>
+          <Image
+            source={{uri: item.thumbnail}}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
+          <Text style={styles.productTitle}>{item.title}</Text>
+          <Text style={styles.productDescription}>{item.description}</Text>
+          <View style={styles.productFooter}>
+            <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+            <Text
+              style={styles.productToFav}
+              onPress={() => addToFavorites(item)}>
+              Add To Favorites
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     ),
     [],
   );
 
   const keyExtractor = useCallback((item: Product) => item.id.toString(), []);
 
+  const addToFavorites = async (item: Product) => {
+    try {
+      const existingFavorites = await AsyncStorage.getItem('@favorites');
+      const favorites = existingFavorites ? JSON.parse(existingFavorites) : [];
+
+      const newFavorites = [...favorites, item];
+
+      await AsyncStorage.setItem('@favorites', JSON.stringify(newFavorites));
+      Alert.alert('Success', `${item.title} success added to favorites!`);
+    } catch (err) {
+      console.error('Error adding to favorites:', err);
+    }
+  };
+
   if (error) {
     return <Text style={styles.errorText}>{error}</Text>;
   }
+
+  const showProductDetails = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setSelectedProduct(null);
+  };
 
   return (
     <>
@@ -136,6 +175,53 @@ const Home: React.FC = () => {
         contentContainerStyle={styles.productList}
       />
       <Gap height={55} />
+
+      {selectedProduct && (
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={closeModal}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Image
+                source={{uri: selectedProduct.thumbnail}}
+                style={styles.modalImage}
+                resizeMode="cover"
+              />
+              <Text style={styles.modalTitle}>{selectedProduct.title}</Text>
+              <Text style={styles.modalDescription}>
+                {selectedProduct.description}
+              </Text>
+
+              <View style={styles.tagContainer}>
+                {selectedProduct.tags.map((tag, index) => (
+                  <Text key={index} style={styles.modalTags}>
+                    {tag}
+                  </Text>
+                ))}
+              </View>
+              <Text style={styles.modalPrice}>
+                ${selectedProduct.price.toFixed(2)}
+              </Text>
+
+              <Text style={styles.modalLabel}>
+                Brand: {selectedProduct.brand}
+              </Text>
+              <Text style={styles.modalLabel}>
+                Rating: {selectedProduct.rating} / 5
+              </Text>
+              <Text style={styles.modalLabel}>
+                Stock: {selectedProduct.stock} available
+              </Text>
+
+              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                <Text style={{color: 'red'}}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </>
   );
 };
@@ -177,10 +263,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
+  productFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
   productPrice: {
     fontSize: 16,
     color: '#8c7851',
     fontWeight: 'bold',
+  },
+  productToFav: {
+    color: '#8c7851',
   },
   emptyText: {
     textAlign: 'center',
@@ -192,6 +286,70 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginTop: 2,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '90%',
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 15,
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 10,
+  },
+  modalPrice: {
+    fontSize: 20,
+    color: '#8c7851',
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalLabel: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 5,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  modalTags: {
+    backgroundColor: '#8c7851',
+    color: 'white',
+    padding: 5,
+    borderRadius: 20,
+    marginRight: 5,
+    marginBottom: 5,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    fontSize: 18,
   },
 });
 

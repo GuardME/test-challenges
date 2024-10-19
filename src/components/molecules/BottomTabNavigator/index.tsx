@@ -14,7 +14,7 @@ const IconComponent: React.FC<IconProps> = ({ label, focus }) => {
         <Icon
           name={focus ? 'home' : 'home-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
     case 'Favorite':
@@ -22,7 +22,7 @@ const IconComponent: React.FC<IconProps> = ({ label, focus }) => {
         <Icon
           name={focus ? 'heart' : 'heart-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
     case 'Profile':
@@ -30,7 +30,7 @@ const IconComponent: React.FC<IconProps> = ({ label, focus }) => {
         <Icon
           name={focus ? 'account' : 'account-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
     default:
@@ -38,7 +38,7 @@ const IconComponent: React.FC<IconProps> = ({ label, focus }) => {
         <Icon
           name="help-circle-outline"
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
   }
@@ -104,7 +104,7 @@ const BottomNavigator: React.FC<BottomNavigatorProps> = ({
             onPress={onPress}
             onLongPress={onLongPress}>
             <IconComponent label={label} focus={isFocused} />
-            <Text style={{ color: isFocused ? 'green' : '#8e8e93', fontSize: 12 }}>
+            <Text style={{ color: isFocused ? '#8c7851' : '#8e8e93', fontSize: 12 }}>
               {label}
             </Text>
           </TouchableOpacity>

@@ -12,9 +12,9 @@ interface Category {
 }
 
 interface CategoryScrollProps {
-  categories: Category[]; // Expecting an array of Category objects
+  categories: Category[];
   selectedCategory: string | null;
-  onSelectCategory: (category: Category) => void; // Expect the entire Category object
+  onSelectCategory: (category: Category) => void;
 }
 
 const CategoryScroll: React.FC<CategoryScrollProps> = ({
@@ -29,12 +29,12 @@ const CategoryScroll: React.FC<CategoryScrollProps> = ({
       style={styles.categoryScroll}>
       {categories.map((category) => (
         <TouchableOpacity
-          key={category.id} // Use category.id as the key
+          key={category.id}
           style={[
             styles.categoryButton,
             selectedCategory === category.name && styles.selectedCategoryButton,
           ]}
-          onPress={() => onSelectCategory(category)} // Pass the full Category object
+          onPress={() => onSelectCategory(category)}
           accessibilityRole="button"
           accessibilityState={{ selected: selectedCategory === category.name }}
           accessibilityLabel={`Category ${category.name}`}
@@ -43,7 +43,7 @@ const CategoryScroll: React.FC<CategoryScrollProps> = ({
             styles.categoryText,
             selectedCategory === category.name && styles.selectedCategoryText
           ]}>
-            {category.name.replace(/-/g, ' ').replace(/\b\w/g, str => str.toUpperCase())} {/* Display the category name with first word capitalized and hyphens removed */}
+            {category.name.replace(/-/g, ' ').replace(/\b\w/g, str => str.toUpperCase())}
           </Text>
         </TouchableOpacity>
       ))}

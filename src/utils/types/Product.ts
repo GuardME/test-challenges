@@ -4,4 +4,8 @@ export type Product = {
   description: string;
   price: number;
   thumbnail: string;
+  brand: string;
+  rating:string;
+  stock: number;
+  tags: Array<String>;
 };
