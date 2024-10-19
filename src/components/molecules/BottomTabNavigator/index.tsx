@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type IconProps = {
@@ -7,22 +7,22 @@ type IconProps = {
   focus: boolean;
 };
 
-const IconComponent: React.FC<IconProps> = ({label, focus}) => {
+const IconComponent: React.FC<IconProps> = ({ label, focus }) => {
   switch (label) {
     case 'Home':
       return (
         <Icon
           name={focus ? 'home' : 'home-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
-    case 'Schedule':
+    case 'Favorite':
       return (
         <Icon
-          name={focus ? 'calendar' : 'calendar-outline'}
+          name={focus ? 'heart' : 'heart-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
     case 'Profile':
@@ -30,15 +30,7 @@ const IconComponent: React.FC<IconProps> = ({label, focus}) => {
         <Icon
           name={focus ? 'account' : 'account-outline'}
           size={24}
-          color={focus ? 'green' : '#222'}
-        />
-      );
-    case 'Friends':
-      return (
-        <Icon
-          name={focus ? 'account-group' : 'account-group-outline'}
-          size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
     default:
@@ -46,7 +38,7 @@ const IconComponent: React.FC<IconProps> = ({label, focus}) => {
         <Icon
           name="help-circle-outline"
           size={24}
-          color={focus ? 'green' : '#222'}
+          color={focus ? '#8c7851' : '#222'}
         />
       );
   }
@@ -72,7 +64,7 @@ const BottomNavigator: React.FC<BottomNavigatorProps> = ({
   return (
     <View style={styles.container}>
       {state.routes.map((route: any, index: number) => {
-        const {options} = descriptors[route.key];
+        const { options } = descriptors[route.key];
         const label =
           options.tabBarLabel !== undefined
             ? options.tabBarLabel
@@ -106,13 +98,15 @@ const BottomNavigator: React.FC<BottomNavigatorProps> = ({
             style={styles.btn}
             key={index}
             accessibilityRole="button"
-            accessibilityState={isFocused ? {selected: true} : {}}
+            accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
             testID={options.tabBarTestID}
             onPress={onPress}
             onLongPress={onLongPress}>
             <IconComponent label={label} focus={isFocused} />
-            <Text style={{color: isFocused ? 'green' : '#222'}}>{label}</Text>
+            <Text style={{ color: isFocused ? '#8c7851' : '#8e8e93', fontSize: 12 }}>
+              {label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -129,17 +123,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 30,
     justifyContent: 'space-around',
-    borderRadius: 30,
+    borderRadius: 30, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 10, 
+    elevation: 4, 
+    position: 'absolute',
+    bottom: 13,
+    left: 0,
+    right: 0,
     marginHorizontal: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
   },
   btn: {
     alignItems: 'center',
-
   },
 });
