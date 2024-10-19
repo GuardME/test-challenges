@@ -1,111 +1,197 @@
-import React, {useEffect, useState} from 'react';
-import {ScrollView, StyleSheet, TouchableOpacity, Text} from 'react-native';
-import {EventCard} from '../../components/molecules';
+import React, {useEffect, useState, useCallback} from 'react';
+import {
+  FlatList,
+  ActivityIndicator,
+  Text,
+  View,
+  Image,
+  StyleSheet,
+} from 'react-native';
+import {CategoryScroll} from '../../components/molecules';
+import {Gap, Header} from '../../components/atoms';
+import {Product, Category} from '../../utils';
+import {
+  fetchCategories,
+  fetchProductsByCategory,
+} from '../../services/Category';
 
-const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [listCategory, setListCategory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  // Data Available to show in card is
-  // title, description, price
-  // error android emulator ga tau apanya gua ubah ke port 8082
+const Home: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('https://dummyjson.com/products');
-        const data = await response.json();
-        console.log('data', data);
-        setProducts(data.products);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setLoading(false);
-      }
-    };
-
-    const fetchCategoriesList = async () => {
-      try {
-        const response = await fetch(
-          'https://dummyjson.com/products/category-list',
-        );
-        const data = await response.json();
-        console.log('data categories', data);
-        setListCategory(data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setLoading(false);
-      }
-    };
-    fetchCategoriesList();
-    fetchProducts();
+    loadCategories();
   }, []);
 
-  const events = [
-    {
-      title: 'Tilden Park Golf Course',
-      location: '10 Golf Course Dr, Berkeley, CA',
-      date: 'Mon, 05 Aug',
-      time: '08:30',
-      image: 'https://example.com/tilden.jpg',
-      status: 'Finish',
+  const loadCategories = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const fetchedCategories = await fetchCategories();
+      setCategories(fetchedCategories);
+      if (fetchedCategories.length > 0) {
+        setSelectedCategory(fetchedCategories[0]);
+        loadProducts(fetchedCategories[0]);
+      }
+    } catch (err) {
+      setError('Failed to load categories.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadProducts = useCallback(async (category: Category) => {
+    try {
+      setIsLoading(true);
+      const fetchedProducts = await fetchProductsByCategory(category);
+      setProducts(fetchedProducts);
+    } catch (err) {
+      setError('Failed to load products.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleCategorySelect = useCallback(
+    (category: Category) => {
+      setSelectedCategory(category);
+      loadProducts(category);
     },
-    {
-      title: 'Lawrence Park Golf Club',
-      location: '3700 E Lake Rd, Erie, PA',
-      date: 'Fri, 05 Aug',
-      time: '08:30',
-      image: 'https://example.com/lawrence.jpg',
-      status: 'Finish',
-    },
-    {
-      title: 'Meadow Golf Juan Yin Park',
-      location: '110, Taiwan, Taipei City',
-      date: 'Sat, 10 Aug',
-      time: '10:30',
-      image: 'https://example.com/meadow.jpg',
-      status: 'Canceled',
-    },
-  ];
+    [loadProducts],
+  );
+
+  const renderProductItem = useCallback(
+    ({item}: {item: Product}) => (
+      <View style={styles.productCard}>
+        <Image
+          source={{uri: item.thumbnail}}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+        <Text style={styles.productTitle}>{item.title}</Text>
+        <Text style={styles.productDescription}>{item.description}</Text>
+        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+      </View>
+    ),
+    [],
+  );
+
+  const keyExtractor = useCallback((item: Product) => item.id.toString(), []);
+
+  if (error) {
+    return <Text style={styles.errorText}>{error}</Text>;
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {listCategory.map((category, index) => (
-          <TouchableOpacity
-            key={index} // Unique key for each item
-            style={styles.categoryButton}
-            onPress={() => console.log(`Selected: ${category}`)} // Example onPress function
-          >
-            <Text style={styles.categoryText}>{category}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      {events.map((event, index) => (
-        <EventCard key={index} event={event} />
-      ))}
-    </ScrollView>
+    <>
+      <FlatList
+        data={products}
+        renderItem={renderProductItem}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.stickyHeader}>
+              <Header
+                title={
+                  selectedCategory
+                    ? `${selectedCategory.name
+                        .replace(/-/g, ' ')
+                        .replace(/\w\S*/g, function (txt) {
+                          return (
+                            txt.charAt(0).toUpperCase() +
+                            txt.slice(1).toLowerCase()
+                          );
+                        })} Products`
+                    : 'Products'
+                }
+                subtitle="Explore our collection"
+              />
+              <Gap height={15} />
+
+              <CategoryScroll
+                categories={categories}
+                selectedCategory={selectedCategory?.name || null}
+                onSelectCategory={handleCategorySelect}
+              />
+            </View>
+
+            <Gap height={15} />
+          </View>
+        }
+        stickyHeaderIndices={[0]}
+        ListEmptyComponent={
+          !isLoading ? (
+            <Text style={styles.emptyText}>
+              No products available for the selected category.
+            </Text>
+          ) : null
+        }
+        ListFooterComponent={
+          isLoading && <ActivityIndicator size="large" color="green" />
+        }
+        contentContainerStyle={styles.productList}
+      />
+      <Gap height={55} />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  stickyHeader: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  productList: {
+    paddingBottom: 20,
+    paddingHorizontal: 16,
     backgroundColor: '#f9f9f9',
   },
-  categoryButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginHorizontal: 5,
-    borderRadius: 10,
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    borderStyle: 'solid',
+  productCard: {
+    padding: 10,
+    marginVertical: 5,
     backgroundColor: 'white',
-    elevation: 3,
+    borderRadius: 10,
+    elevation: 2,
   },
-  categoryText: {
-    color: 'black',
+  productTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  productDescription: {
+    fontSize: 14,
+    color: '#555',
+  },
+  productImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  productPrice: {
+    fontSize: 16,
+    color: '#8c7851',
+    fontWeight: 'bold',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginVertical: 20,
+    fontSize: 16,
+    color: '#555',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 2,
   },
 });
 
